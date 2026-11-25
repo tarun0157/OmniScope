@@ -1,7 +1,7 @@
 
 import streamlit as st
 
-from db import get_latest_reports, get_latest_briefing
+from db import get_latest_reports, get_latest_briefing, initialize_database
 from run_all import main
 
 
@@ -11,6 +11,8 @@ st.set_page_config(
     page_icon="🌐",
     layout="wide"
 )
+
+initialize_database()
 
 # Dashboard heading
 st.title("🌐 OmniScope")
