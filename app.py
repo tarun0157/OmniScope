@@ -62,30 +62,36 @@ with briefing_tab:
 
     st.header("Daily Intelligence Briefing")
 
+    
     if st.button("🚀 Run Research Now", type="primary"):
+        with st.spinner(
+            "Researching... Running all agents and preparing briefing."
+        ):
+            try:
+                main()
 
-    with st.spinner(
-        "Researching... Running all agents and preparing briefing."
-    ):
-        try:
-            main()
+                latest_briefing = get_latest_briefing()
 
-            latest_briefing = get_latest_briefing()
+                if latest_briefing:
+                    try:
+                        send_briefing_email(
+                            latest_briefing["briefing"]
+                        )
+                        st.success(
+                            "Research completed and email sent successfully!"
+                        )
+                    except Exception as email_error:
+                        st.warning(
+                            f"Research completed, but email could not be sent: {email_error}"
+                        )
+                else:
+                    st.warning(
+                        "Research completed, but briefing was not found."
+                    )
 
-            if latest_briefing:
-                send_briefing_email(
-                    latest_briefing["briefing"]
-                )
-                st.success(
-                    "Research completed and email sent successfully!"
-                )
-            else:
-                st.warning("Research completed, but briefing was not found.")
+            except Exception as research_error:
+                st.error(f"Research failed: {research_error}")
 
-        except Exception as error:
-            st.error(f"Research or email error: {error}")
-
-        st.rerun()
 
     latest_briefing = get_latest_briefing()
 
