@@ -1,6 +1,10 @@
 
 import streamlit as st
 
+import smtplib
+import ssl
+from email.message import EmailMessage
+
 from db import get_latest_reports, get_latest_briefing, initialize_database
 from run_all import main
 
@@ -13,6 +17,28 @@ st.set_page_config(
 )
 
 initialize_database()
+def send_briefing_email(briefing):
+    msg = EmailMessage()
+
+    sender = st.secrets["SMTP_EMAIL"]
+    receiver = st.secrets["RECEIVER_EMAIL"]
+
+    msg["Subject"] = "OmniScope Intelligence Briefing"
+    msg["From"] = sender
+    msg["To"] = receiver
+
+    msg.set_content(briefing)
+
+    context = ssl.create_default_context()
+
+    with smtplib.SMTP_SSL(
+        "smtp.gmail.com", 465, context=context
+    ) as server:
+        server.login(
+            sender,
+            st.secrets["SMTP_APP_PASSWORD"]
+        )
+        server.send_message(msg)
 
 # Dashboard heading
 st.title("🌐 OmniScope")
@@ -38,16 +64,28 @@ with briefing_tab:
 
     if st.button("🚀 Run Research Now", type="primary"):
 
-        with st.spinner(
-            "Researching... Running all agents and preparing briefing. Please wait."
-        ):
-            try:
-                main()
-                st.success("Research completed successfully!")
-                st.rerun()
+    with st.spinner(
+        "Researching... Running all agents and preparing briefing."
+    ):
+        try:
+            main()
 
-            except Exception as error:
-                st.error(f"Research failed: {error}")
+            latest_briefing = get_latest_briefing()
+
+            if latest_briefing:
+                send_briefing_email(
+                    latest_briefing["briefing"]
+                )
+                st.success(
+                    "Research completed and email sent successfully!"
+                )
+            else:
+                st.warning("Research completed, but briefing was not found.")
+
+        except Exception as error:
+            st.error(f"Research or email error: {error}")
+
+        st.rerun()
 
     latest_briefing = get_latest_briefing()
 
